@@ -25,8 +25,11 @@ def crossover(parent1, parent2):
 mutation operation for genetic algorithm
 """
 def mutation(genome, mutRate):
+    #loop through for each bit in the genome
     for i in range(len(genome)):
+        #pick a random number
         x = random.random()
+        #if number is smaller than mutation rate, mutate
         if x < mutRate:
             genome[i] = (1 - genome[i])
     return genome
@@ -35,10 +38,13 @@ def mutation(genome, mutRate):
 selection operation for choosing a parent for mating from the population
 """
 def selection(pop):
+    #pick a random number
     x = random.random()
     for ii in range(len(pop)):
+        #find the element greater than the random
         if pop[ii].accFit > x:
             return pop[ii]
+    #if there is none, return last element
     return pop[-1]
 
 """
@@ -92,16 +98,22 @@ def calcFit(org, xVals, yVals):
 accPop will calculate the fitness and accFit of the population
 """
 def accPop(pop, xVals, yVals):
-    fitnessSum = 0 
+    #set counter equal to 0
+    fitnessSum = 0
+    #calculate fitness
     for org in pop:
         org.fitness = calcFit(org, xVals, yVals)
         fitnessSum += org.fitness
+    #sort backwards
     pop.sort(reverse = True)
+    #empty accumulative fitness 
     accFitness = 0
+    #loop through and calculate summed fitness function and save attributes
     for org in pop:
         org.normFit = org.fitness / fitnessSum
         accFitness += org.normFit
         org.accFit = accFitness
+    #return population
     return pop
 
 """
@@ -136,15 +148,21 @@ def initPop(size, numCoeffs):
 nextGeneration will create the next generation
 """
 def nextGeneration(pop, numCoeffs, mutRate, eliteNum):
+    #create empty newPop
     newPop = [];
+    #loop through to create more new children
     for i in range((len(pop)-eliteNum)//2):
+        #randomly select two parents
         parent1 = selection(pop)
         parent2 = selection(pop)
+        #use crossover function and mutate
         child1,child2 = crossover(parent1.bits,parent2.bits)
         child1 = mutation(child1, mutRate)
         child2 = mutation(child2, mutRate)
+        #append new organisms to population
         newPop.append(Org.Organism(numCoeffs, child1))
         newPop.append(Org.Organism(numCoeffs, child2))
+    #append sorted elite number to be saved each iteration 
     newPop += pop[:eliteNum]
     return newPop
 
@@ -167,11 +185,14 @@ best: the bestN number of best organisms seen over the course of the GA
 fit:  the highest observed fitness value for each iteration
 """
 def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
+    #create initial population, grab best set to be saved
     pop = initPop(size, numCoeffs)
     pop = accPop(pop,xVals,yVals)
     best = pop[bestN:]
+    #note best fitness
     fit = []
     fit.append(best[0].fitness)
+    #loop through k generations
     for ii in range(k):
         pop = nextGeneration(pop, numCoeffs, mutRate, eliteNum)
         pop = accPop(pop, xVals, yVals)
@@ -189,6 +210,7 @@ def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
                 # Replace that individual and resort the list.
                 best[-1] = pop[ind]
                 best.sort(reverse=True)
+        #append best fitness value 
         fit.append(best[0].fitness)
     return (best,fit)
 
