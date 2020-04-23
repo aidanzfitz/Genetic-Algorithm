@@ -1,8 +1,8 @@
 """
 hw8.py
-Name(s):
-NetId(s):
-Date:
+Name(s): Aidan Fitzsimons
+NetId(s): azf6
+Date: April 24 2020
 """
 
 import math
