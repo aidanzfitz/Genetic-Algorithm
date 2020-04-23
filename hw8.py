@@ -14,22 +14,32 @@ import matplotlib.pyplot as plt
 crossover operation for genetic algorithm
 """
 def crossover(parent1, parent2):
+    #pick a random integer for the index
     k = random.randint(0,len(parent1))
-    child1 = parent1[:k] + parent2[(k+1):]
-    child2 = parent2[:k] + parent1[(k+1):]
+    #use splicing to construct children
+    child1 = parent1[:k] + parent2[k:]
+    child2 = parent2[:k] + parent1[k:]
     return (child1, child2)
 
 """
 mutation operation for genetic algorithm
 """
 def mutation(genome, mutRate):
+    for i in range(len(genome)):
+        x = random.random()
+        if x < mutRate:
+            genome[i] = (1 - genome[i])
     return genome
 
 """
 selection operation for choosing a parent for mating from the population
 """
 def selection(pop):
-    return org
+    x = random.random()
+    for ii in range(len(pop)):
+        if pop[ii].accFit > x:
+            return pop[ii]
+    return pop[-1]
 
 """
 calcFit will calculate the fitness of an organism
@@ -82,6 +92,16 @@ def calcFit(org, xVals, yVals):
 accPop will calculate the fitness and accFit of the population
 """
 def accPop(pop, xVals, yVals):
+    fitnessSum = 0 
+    for org in pop:
+        org.fitness = calcFit(org, xVals, yVals)
+        fitnessSum += org.fitness
+    pop.sort(reverse = True)
+    accFitness = 0
+    for org in pop:
+        org.normFit = org.fitness / fitnessSum
+        accFitness += org.normFit
+        org.accFit = accFitness
     return pop
 
 """
@@ -116,6 +136,16 @@ def initPop(size, numCoeffs):
 nextGeneration will create the next generation
 """
 def nextGeneration(pop, numCoeffs, mutRate, eliteNum):
+    newPop = [];
+    for i in range((len(pop)-eliteNum)//2):
+        parent1 = selection(pop)
+        parent2 = selection(pop)
+        child1,child2 = crossover(parent1.bits,parent2.bits)
+        child1 = mutation(child1, mutRate)
+        child2 = mutation(child2, mutRate)
+        newPop.append(Org.Organism(numCoeffs, child1))
+        newPop.append(Org.Organism(numCoeffs, child2))
+    newPop += pop[:eliteNum]
     return newPop
 
 """
@@ -137,10 +167,33 @@ best: the bestN number of best organisms seen over the course of the GA
 fit:  the highest observed fitness value for each iteration
 """
 def GA(k, size, numCoeffs, mutRate, xVals, yVals, eliteNum, bestN):
+    pop = initPop(size, numCoeffs)
+    pop = accPop(pop,xVals,yVals)
+    best = pop[bestN:]
+    fit = []
+    fit.append(best[0].fitness)
+    for ii in range(k):
+        pop = nextGeneration(pop, numCoeffs, mutRate, eliteNum)
+        pop = accPop(pop, xVals, yVals)
+        # Look at the top bestN organisms of this generation to see if we
+        # need to replace some or all of the best organisms seen so far.
+        for ind in range(bestN):
+            # First, make sure this individual is not already in the list.
+            inBest = False
+            for bOrg in best:
+                if bOrg.isClone(pop[ind]):
+                    inBest = True
+                    break
+            # Compare this individual to the worst of the best: best[-1].
+            if pop[ind].fitness > best[-1].fitness and not inBest:
+                # Replace that individual and resort the list.
+                best[-1] = pop[ind]
+                best.sort(reverse=True)
+        fit.append(best[0].fitness)
     return (best,fit)
 
 """
-runScenario will run a given scenario, plot the highest fitness value for each
+runScenario will run a given scenario, plot the highest fitness value forx each
 generation, and return a list of the bestN number of top individuals observed.
 
 INPUTS
@@ -165,7 +218,7 @@ def runScenario(scenario, k, size, numCoeffs, mutRate, \
     plt.title('Best Fitness per Generation')
     plt.xlabel('Generation')
     plt.ylabel('Best Fitness')
-    plt.savefig('fitA.png', bbox_inches='tight')
+    plt.savefig('fit' + scenario + '.png', bbox_inches='tight')
     plt.close('all')
 
     # Return the best organisms.
